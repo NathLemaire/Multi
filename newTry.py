@@ -27,13 +27,13 @@ def mergeSort(arr, depth):
         # into 2 halves
         R = arr[mid:]
 
-        if depth < multilaunchdepth:
+        if depth < multi_launch_depth:
             p1 = Processor(args=(L, depth+1))
             p1.start()
             mergeSort(R, depth + 1)
             p1.join()
         else:
-            if depth == multilaunchdepth:
+            if depth == multi_launch_depth:
                 print("Merge sort depth", depth, os.getpid())
             mergeSort(R, depth + 1)
             mergeSort(L, depth + 1)
@@ -65,15 +65,15 @@ def createarray(len, bound):
 
 
 def calculate_depth(array_length, threads):
-    global multilaunchdepth
-    multilaunchdepth = math.floor(math.log2(threads))
-    if array_length < multilaunchdepth:
-        multilaunchdepth = 0
+    global multi_launch_depth
+    multi_launch_depth = math.floor(math.log2(threads))
+    if array_length < multi_launch_depth:
+        multi_launch_depth = 0
 
 
 # Driver Code
 if __name__ == '__main__':
-    arr = createarray(1000000, 1000)
+    arr = createarray(1000, 1000)
     P = Processor(args=(arr, 0))
     calculate_depth(len(arr), 4)
     begin = time.time()
