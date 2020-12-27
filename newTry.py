@@ -1,13 +1,14 @@
 import math
-import multiprocessing
 import os
 import random
 import time
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Array
+
+multi_launch_depth = 0
+sorted_array = []
 
 
 class Processor(Process):
-
     def __init__(self, args):
         super(Processor, self).__init__()
         self.args = args
@@ -15,68 +16,83 @@ class Processor(Process):
     def run(self):
         mergeSort(self.args[0], self.args[1])
 
-def mergeSort(arr, depth):
-    if len(arr) > 1:
 
-        # Finding the mid of the array
-        mid = len(arr) // 2
-
-        # Dividing the array elements
-        L = arr[:mid]
-
-        # into 2 halves
-        R = arr[mid:]
-
+def mergeSort(tbs_arr, depth):
+    if len(tbs_arr) > 1:
+        mid = len(tbs_arr) // 2
+        l_arr = Array('i', tbs_arr[:mid])
+        r_arr = Array('i', tbs_arr[mid:])
         if depth < multi_launch_depth:
-            p1 = Processor(args=(L, depth+1))
+            p1 = Processor(args=(l_arr, depth + 1))
             p1.start()
-            mergeSort(R, depth + 1)
             p1.join()
+            mergeSort(r_arr, depth + 1)
         else:
-            if depth == multi_launch_depth:
-                print("Merge sort depth", depth, os.getpid())
-            mergeSort(R, depth + 1)
-            mergeSort(L, depth + 1)
-        i = j = k = 0
+            #if depth == multi_launch_depth:
+            #    print("Merge sort depth", depth, os.getpid(), '\n')
+            mergeSort(r_arr, depth + 1)
+            mergeSort(l_arr, depth + 1)
 
-        # Copy data to temp arrays L[] and R[]
-        while i < len(L) and j < len(R):
-            if L[i] < R[j]:
-                arr[k] = L[i]
+        i = j = k = 0
+        while i < len(l_arr) and j < len(r_arr):
+            if l_arr[i] < r_arr[j]:
+                tbs_arr[k] = l_arr[i]
                 i += 1
             else:
-                arr[k] = R[j]
+                tbs_arr[k] = r_arr[j]
                 j += 1
             k += 1
-
-        # Checking if any element was left
-        while i < len(L):
-            arr[k] = L[i]
+        while i < len(l_arr):
+            tbs_arr[k] = l_arr[i]
             i += 1
             k += 1
-
-        while j < len(R):
-            arr[k] = R[j]
+        while j < len(r_arr):
+            tbs_arr[k] = r_arr[j]
             j += 1
             k += 1
+        if depth == 0:
+            global sorted_array
+            sorted_array = tbs_arr
 
-def createarray(len, bound):
-    return [random.randint(0, bound) for x in range(0, len)]
+
+def create_array(array_length, bound):
+    v_array = [random.randint(0, bound) for x in range(0, array_length)]
+    return v_array
 
 
 def calculate_depth(array_length, threads):
     global multi_launch_depth
+    if not (threads & (threads - 1) == 0) and threads != 0:
+        print("Number of cores must be a power of 2\n")
+        raise BaseException()
     multi_launch_depth = math.floor(math.log2(threads))
     if array_length < multi_launch_depth:
         multi_launch_depth = 0
 
 
-# Driver Code
-if __name__ == '__main__':
-    arr = createarray(1000, 1000)
-    P = Processor(args=(arr, 0))
-    calculate_depth(len(arr), 4)
-    begin = time.time()
-    mergeSort(arr, 0)
-    print(time.time() - begin)
+def merge_sort(array, number_of_threads):
+    my_array = Array('i', array)
+    calculate_depth(len(array), number_of_threads)
+    mergeSort(my_array, 0)
 
+
+def check_array(sorted_list):
+    flag = True
+    i = 1
+    while i < len(sorted_list):
+        if sorted_list[i] < sorted_list[i - 1]:
+            flag = False
+        i += 1
+    if flag:
+        return True
+    else:
+        return False
+
+
+if __name__ == '__main__':
+    begin_array = create_array(10000, 1000)
+    begin = time.time()
+    merge_sort(begin_array, 4)
+    print(time.time() - begin)
+    print(list(sorted_array))
+    check_array(list(sorted_array))
