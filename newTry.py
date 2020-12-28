@@ -2,7 +2,7 @@ import math
 import os
 import random
 import time
-from multiprocessing import Process, Array
+from multiprocessing import Process, Array, Queue
 
 multi_launch_depth = 0
 
@@ -13,24 +13,26 @@ class Processor(Process):
         self.args = args
 
     def run(self):
-        mergeSort(self.args[0], self.args[1])
+        l = mergeSort(self.args[0], self.args[1])
+        self.args[2].put(l)
 
 
 def mergeSort(tbs_arr, depth):
     if len(tbs_arr) > 1:
         mid = len(tbs_arr) // 2
-        l_arr = Array('i', tbs_arr[:mid], lock=False)
-        r_arr = Array('i', tbs_arr[mid:], lock=False)
         if depth < multi_launch_depth:
-            p1 = Processor(args=(l_arr, depth + 1))
+            q = Queue()
+            p1 = Processor(args=(tbs_arr[:mid], depth + 1, q))
             p1.start()
-            mergeSort(r_arr, depth + 1)
+            l_arr = mergeSort(tbs_arr[mid:], depth + 1)
+            r_arr = q.get()
             p1.join()
+
         else:
             if depth == multi_launch_depth:
                 print("Merge sort depth", depth, os.getpid(), '\n')
-            mergeSort(r_arr, depth + 1)
-            mergeSort(l_arr, depth + 1)
+            l_arr = mergeSort(tbs_arr[:mid], depth + 1)
+            r_arr = mergeSort(tbs_arr[mid:], depth + 1)
 
         i = j = k = 0
         while i < len(l_arr) and j < len(r_arr):
@@ -49,13 +51,11 @@ def mergeSort(tbs_arr, depth):
             tbs_arr[k] = r_arr[j]
             j += 1
             k += 1
-        if depth == 0:
-            return tbs_arr
+    return tbs_arr
 
 
 def create_array(array_length, bound):
-    v_array = [random.randint(0, bound) for _ in range(0, array_length)]
-    return v_array
+    return [random.randint(0, bound) for _ in range(0, array_length)]
 
 
 def calculate_depth(array_length, threads):
@@ -88,9 +88,9 @@ def check_array(sorted_list):
 
 
 if __name__ == '__main__':
-    begin_array = create_array(200000, 10000)
+    begin_array = create_array(100000, 100000)
     begin = time.time()
     sorted_array = merge_sort(begin_array, 4)
     print(time.time() - begin)
     # print(list(sorted_array))
-    check_array(list(sorted_array))
+    print(check_array(list(sorted_array)))
