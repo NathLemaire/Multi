@@ -76,7 +76,7 @@ def check_array(sorted_list):
 
 
 if __name__ == '__main__':
-    begin_array = create_array(1000000, 1000000)
+    begin_array = create_array(10000000, 1000000)
     begin = time.time()
     sorted_array = merge_sort(begin_array, 4)
     print(time.time() - begin)
