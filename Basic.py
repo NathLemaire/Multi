@@ -59,9 +59,7 @@ def createarray(len, bound):
 if __name__ == '__main__':
     arr = createarray(1000000, 10000)
     begining = time.time()
-    print("Given array is", end="\n")
     mergeSort(arr)
-    print("Sorted array is: ", end="\n")
     print(time.time() - begining)
 
 # This code is contributed by Mayank Khanna

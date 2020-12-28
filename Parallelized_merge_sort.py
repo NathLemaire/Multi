@@ -1,10 +1,7 @@
 import math
-import os
 import random
 import time
-from multiprocessing import Process, Array, Queue
-
-multi_launch_depth = 0
+from multiprocessing import Process, Queue
 
 
 class Processor(Process):
@@ -13,27 +10,22 @@ class Processor(Process):
         self.args = args
 
     def run(self):
-        l = mergeSort(self.args[0], self.args[1])
-        self.args[2].put(l)
+        self.args[3].put(mergemator(self.args[0], self.args[1], self.args[2]))
 
 
-def mergeSort(tbs_arr, depth):
+def mergemator(tbs_arr, depth, sync_depth):
     if len(tbs_arr) > 1:
         mid = len(tbs_arr) // 2
-        if depth < multi_launch_depth:
+        if depth < sync_depth:
             q = Queue()
-            p1 = Processor(args=(tbs_arr[:mid], depth + 1, q))
+            p1 = Processor(args=(tbs_arr[:mid], depth + 1, sync_depth, q))
             p1.start()
-            l_arr = mergeSort(tbs_arr[mid:], depth + 1)
+            l_arr = mergemator(tbs_arr[mid:], depth + 1, sync_depth)
             r_arr = q.get()
             p1.join()
-
         else:
-            if depth == multi_launch_depth:
-                print("Merge sort depth", depth, os.getpid(), '\n')
-            l_arr = mergeSort(tbs_arr[:mid], depth + 1)
-            r_arr = mergeSort(tbs_arr[mid:], depth + 1)
-
+            l_arr = mergemator(tbs_arr[:mid], depth + 1, sync_depth)
+            r_arr = mergemator(tbs_arr[mid:], depth + 1, sync_depth)
         i = j = k = 0
         while i < len(l_arr) and j < len(r_arr):
             if l_arr[i] < r_arr[j]:
@@ -59,19 +51,18 @@ def create_array(array_length, bound):
 
 
 def calculate_depth(array_length, threads):
-    global multi_launch_depth
     if not (threads & (threads - 1) == 0) and threads != 0:
         print("Number of cores must be a power of 2\n")
         raise BaseException()
-    multi_launch_depth = math.floor(math.log2(threads))
-    if array_length < multi_launch_depth:
-        multi_launch_depth = 0
+    sync_depth = math.floor(math.log2(threads))
+    if array_length < sync_depth:
+        return 0
+    else:
+        return sync_depth
 
 
 def merge_sort(array, number_of_threads):
-    my_array = Array('i', array, lock=False)
-    calculate_depth(len(array), number_of_threads)
-    return mergeSort(my_array, 0)
+    return mergemator(array, 0, calculate_depth(len(array), number_of_threads))
 
 
 def check_array(sorted_list):
@@ -81,16 +72,12 @@ def check_array(sorted_list):
         if sorted_list[i] < sorted_list[i - 1]:
             flag = False
         i += 1
-    if flag:
-        return True
-    else:
-        return False
+    return flag
 
 
 if __name__ == '__main__':
-    begin_array = create_array(100000, 100000)
+    begin_array = create_array(1000000, 1000000)
     begin = time.time()
     sorted_array = merge_sort(begin_array, 4)
     print(time.time() - begin)
-    # print(list(sorted_array))
-    print(check_array(list(sorted_array)))
+    print(check_array(sorted_array))
