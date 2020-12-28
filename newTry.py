@@ -5,7 +5,6 @@ import time
 from multiprocessing import Process, Array
 
 multi_launch_depth = 0
-sorted_array = []
 
 
 class Processor(Process):
@@ -20,16 +19,16 @@ class Processor(Process):
 def mergeSort(tbs_arr, depth):
     if len(tbs_arr) > 1:
         mid = len(tbs_arr) // 2
-        l_arr = Array('i', tbs_arr[:mid])
-        r_arr = Array('i', tbs_arr[mid:])
+        l_arr = Array('i', tbs_arr[:mid], lock=False)
+        r_arr = Array('i', tbs_arr[mid:], lock=False)
         if depth < multi_launch_depth:
             p1 = Processor(args=(l_arr, depth + 1))
             p1.start()
-            p1.join()
             mergeSort(r_arr, depth + 1)
+            p1.join()
         else:
-            #if depth == multi_launch_depth:
-            #    print("Merge sort depth", depth, os.getpid(), '\n')
+            if depth == multi_launch_depth:
+                print("Merge sort depth", depth, os.getpid(), '\n')
             mergeSort(r_arr, depth + 1)
             mergeSort(l_arr, depth + 1)
 
@@ -51,12 +50,11 @@ def mergeSort(tbs_arr, depth):
             j += 1
             k += 1
         if depth == 0:
-            global sorted_array
-            sorted_array = tbs_arr
+            return tbs_arr
 
 
 def create_array(array_length, bound):
-    v_array = [random.randint(0, bound) for x in range(0, array_length)]
+    v_array = [random.randint(0, bound) for _ in range(0, array_length)]
     return v_array
 
 
@@ -71,9 +69,9 @@ def calculate_depth(array_length, threads):
 
 
 def merge_sort(array, number_of_threads):
-    my_array = Array('i', array)
+    my_array = Array('i', array, lock=False)
     calculate_depth(len(array), number_of_threads)
-    mergeSort(my_array, 0)
+    return mergeSort(my_array, 0)
 
 
 def check_array(sorted_list):
@@ -90,9 +88,9 @@ def check_array(sorted_list):
 
 
 if __name__ == '__main__':
-    begin_array = create_array(10000, 1000)
+    begin_array = create_array(200000, 10000)
     begin = time.time()
-    merge_sort(begin_array, 4)
+    sorted_array = merge_sort(begin_array, 4)
     print(time.time() - begin)
-    print(list(sorted_array))
+    # print(list(sorted_array))
     check_array(list(sorted_array))

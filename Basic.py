@@ -57,7 +57,7 @@ def createarray(len, bound):
 
 # Driver Code
 if __name__ == '__main__':
-    arr = createarray(1000, 50)
+    arr = createarray(1000000, 10000)
     begining = time.time()
     print("Given array is", end="\n")
     mergeSort(arr)
