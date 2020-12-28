@@ -20,8 +20,8 @@ class Processor(Process):
 def mergeSort(tbs_arr, depth):
     if len(tbs_arr) > 1:
         mid = len(tbs_arr) // 2
-        l_arr = Array('i', tbs_arr[:mid])
-        r_arr = Array('i', tbs_arr[mid:])
+        l_arr = tbs_arr[:mid]
+        r_arr = tbs_arr[mid:]
         if depth < multi_launch_depth:
             p1 = Processor(args=(l_arr, depth + 1))
             p1.start()
@@ -57,7 +57,7 @@ def mergeSort(tbs_arr, depth):
 
 def create_array(array_length, bound):
     v_array = [random.randint(0, bound) for x in range(0, array_length)]
-    return v_array
+    return Array('i', v_array)
 
 
 def calculate_depth(array_length, threads):
@@ -71,9 +71,8 @@ def calculate_depth(array_length, threads):
 
 
 def merge_sort(array, number_of_threads):
-    my_array = Array('i', array)
     calculate_depth(len(array), number_of_threads)
-    mergeSort(my_array, 0)
+    mergeSort(array, 0)
 
 
 def check_array(sorted_list):
@@ -90,9 +89,9 @@ def check_array(sorted_list):
 
 
 if __name__ == '__main__':
-    begin_array = create_array(10000, 1000)
+    begin_array = create_array(10, 1000)
     begin = time.time()
     merge_sort(begin_array, 4)
     print(time.time() - begin)
     print(list(sorted_array))
-    check_array(list(sorted_array))
+    print(check_array(sorted_array))
